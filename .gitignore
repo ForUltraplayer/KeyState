@@ -11,3 +11,12 @@
 
 # 保留项目说明文件
 !/README.md
+!/.gitignore
+
+# 保留 Rust 重写项目 (排除构建产物与运行时配置)
+!/rust-overlay/
+!/rust-overlay/**
+/rust-overlay/target/
+/rust-overlay/keystate_config.json
+/rust-overlay/profiles/
+/rust-overlay/records/
