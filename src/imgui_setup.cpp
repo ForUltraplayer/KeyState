@@ -1,4 +1,5 @@
 #include "imgui_setup.h"
+#include "lang.h"
 #include "imgui.h"
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_dx9.h"
@@ -24,7 +25,7 @@ bool ImGui_Init(HWND hwnd) {
     // 1. 创建 D3D9
     g_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
     if (!g_pD3D) {
-        MessageBoxW(hwnd, L"Direct3DCreate9 失败！", L"错误", MB_ICONERROR);
+        MessageBoxW(hwnd, LANG(TXT_CreateDirect3DFailed), LANG(TXT_Error), MB_ICONERROR);
         return false;
     }
 
@@ -47,7 +48,7 @@ bool ImGui_Init(HWND hwnd) {
         if (g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd,
                                  D3DCREATE_SOFTWARE_VERTEXPROCESSING,
                                  &g_d3dpp, &g_pd3dDevice) < 0) {
-            MessageBoxW(hwnd, L"创建 D3D9 设备失败！", L"错误", MB_ICONERROR);
+            MessageBoxW(hwnd, LANG(TXT_CreateDeviceFailed), LANG(TXT_Error), MB_ICONERROR);
             return false;
         }
     }
@@ -106,7 +107,14 @@ bool ImGui_Init(HWND hwnd) {
             }
         }
         if (!font) {
-            io.Fonts->AddFontDefault();  // 最终降级
+            io.Fonts->AddFontDefault();
+        }
+
+        const char* koreanFont = "C:\\Windows\\Fonts\\malgun.ttf";
+        if (GetFileAttributesA(koreanFont) != INVALID_FILE_ATTRIBUTES) {
+            fontCfg.MergeMode = true;
+            fontCfg.FontNo = 0;
+            io.Fonts->AddFontFromFileTTF(koreanFont, 16.0f, &fontCfg, io.Fonts->GetGlyphRangesKorean());
         }
     }
 

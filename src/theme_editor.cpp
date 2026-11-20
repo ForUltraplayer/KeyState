@@ -45,18 +45,16 @@ void ThemeEditor::Show(bool visible) {
 void ThemeEditor::RenderContent() {
     if (!m_visible || !m_cfg) return;
 
-    ImGui::Begin(S(82), &m_visible, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
+    char title[128];
+    snprintf(title, sizeof(title), "%s###ThemeEditor", S(82));
+    ImGui::Begin(title, &m_visible, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 
     if (m_cfg->themePresets.size() < 16) m_cfg->InitDefaultThemes();
 
     // 主题列表
     ImGui::BeginChild("ThemeList", ImVec2(200, 300), true);
     for (int i = 0; i < 16; ++i) {
-        const char* name = ToUtf8(m_cfg->themePresets[i].name);
-        if (name[0] == 0) {
-            char fb[32]; snprintf(fb, 32, "预设%d", i);
-            name = fb;
-        }
+        const char* name = ToUtf8(ThemeDisplayName(i, m_cfg->themePresets[i].name));
         if (ImGui::Selectable(name, m_selTheme == i)) {
             m_selTheme = i;
         }
@@ -68,10 +66,11 @@ void ThemeEditor::RenderContent() {
     // 编辑选中主题
     auto& tp = m_cfg->themePresets[m_selTheme];
     ImGui::BeginGroup();
-    ImGui::Text("%s%s", S(187), ToUtf8(tp.name));
+    const char* name = ToUtf8(ThemeDisplayName(m_selTheme, tp.name));
+    ImGui::Text("%s%s", S(187), name);
 
     char nameBuf[64];
-    strncpy(nameBuf, ToUtf8(tp.name), 63); nameBuf[63] = 0;
+    strncpy(nameBuf, name, 63); nameBuf[63] = 0;
     if (ImGui::InputText(S(137), nameBuf, 64)) {
         std::wstring wname;
         int len = MultiByteToWideChar(CP_UTF8, 0, nameBuf, -1, nullptr, 0);

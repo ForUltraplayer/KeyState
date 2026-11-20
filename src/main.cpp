@@ -159,7 +159,7 @@ static void AddTrayIcon(HWND hwnd) {
     g_nid.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     g_nid.uCallbackMessage = WM_TRAY_ICON;
     g_nid.hIcon            = g_hIcon ? g_hIcon : LoadIconW(nullptr, (LPCWSTR)IDI_APPLICATION);
-    wcscpy_s(g_nid.szTip, L"KeyState - Keyboard Monitor");
+    wcscpy_s(g_nid.szTip, L"KeyState");
     Shell_NotifyIconW(NIM_ADD, &g_nid);
 }
 
@@ -169,9 +169,9 @@ static void RemoveTrayIcon() {
 
 static void ShowTrayMenu(HWND hwnd) {
     HMENU hMenu = CreatePopupMenu();
-    AppendMenuW(hMenu, MF_STRING, 1, L"Settings");
+    AppendMenuW(hMenu, MF_STRING, 1, LANG(TXT_TraySettings));
     AppendMenuW(hMenu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(hMenu, MF_STRING, 2, L"Exit");
+    AppendMenuW(hMenu, MF_STRING, 2, LANG(TXT_TrayExit));
     POINT pt; GetCursorPos(&pt);
     SetForegroundWindow(hwnd);
     int cmd = TrackPopupMenu(hMenu, TPM_RETURNCMD | TPM_NONOTIFY, pt.x, pt.y, 0, hwnd, nullptr);
@@ -325,6 +325,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
         g_config.Load(cfgPath.c_str());
     } else {
         g_config = AppConfig{};
+        g_config.lang = static_cast<int>(Lang::KO);
         g_config.keys.push_back({32, L"Space", {235,235,245,255}, {48,48,48,200}, {255,95,95,255}});
         g_config.keys.push_back({65, L"A",     {235,235,245,255}, {48,48,48,200}, {95,255,95,255}});
         g_config.keys.push_back({83, L"S",     {235,235,245,255}, {48,48,48,200}, {95,130,255,255}});
@@ -431,7 +432,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
     // 8. 清理
     g_running = false;
-    if (renderThread.joinable()) renderThread.join();
+    const HANDLE renderHandle = renderThread.native_handle();
+    // UpdateLayeredWindow can send window messages while the renderer finishes.
+    while (MsgWaitForMultipleObjectsEx(1, &renderHandle, INFINITE, QS_SENDMESSAGE,
+                                       MWMO_INPUTAVAILABLE) == WAIT_OBJECT_0 + 1) {
+        PeekMessageW(&msg, nullptr, 0, 0, PM_NOREMOVE | PM_QS_SENDMESSAGE);
+    }
+    renderThread.join();
     g_keyHook.Uninstall();
     g_mouseHook.Uninstall();
     SyncAndSave();

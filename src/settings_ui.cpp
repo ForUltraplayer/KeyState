@@ -269,11 +269,13 @@ bool SettingsUI::RenderImGui() {
 void SettingsUI::DrawPageBasic() {
     if (!m_cfg) return;
     ImGui::SeparatorText(S(24));
-    int langs[3] = {0, 1, 2};
-    const char* langLabels[] = {S(25), S(26), S(27)};
-    for (int i = 0; i < 3; ++i) {
+    const char* langLabels[] = {S(25), S(26), S(27), S(TXT_Korean)};
+    for (int i = 0; i <= static_cast<int>(Lang::KO); ++i) {
         if (i > 0) ImGui::SameLine();
-        if (ImGui::RadioButton(langLabels[i], &m_cfg->lang, langs[i])) { SetLanguage(m_cfg->lang); OnSave(); }
+        if (ImGui::RadioButton(langLabels[i], &m_cfg->lang, i)) {
+            SetLanguage(m_cfg->lang);
+            OnSave();
+        }
     }
     ImGui::Spacing(); ImGui::SeparatorText(S(1));
     if (ImGui::Checkbox(S(2), &m_cfg->showTotal)) OnSave();
@@ -366,10 +368,11 @@ void SettingsUI::DrawPageBasic() {
     ImGui::SameLine();
     if (ImGui::Button(S(55), ImVec2(140, 32))) ImGui::OpenPopup(S(134));
     if (ImGui::BeginPopupModal(S(134), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::TextWrapped(S(56));
+        ImGui::TextWrapped("%s", S(56));
         if (ImGui::Button(S(132), ImVec2(80, 0))) {
             bool chartWasVisible = m_cfg->showChart;
             *m_cfg = AppConfig{};
+            m_cfg->lang = GetLanguage();
             ApplyImGuiTheme(0);
             m_cfg->keys.push_back({32, L"Space", {235,235,245,255}, {48,48,48,200}, {255,95,95,255}});
             m_cfg->keys.push_back({65, L"A",     {235,235,245,255}, {48,48,48,200}, {95,255,95,255}});
@@ -509,8 +512,7 @@ void SettingsUI::DrawPageTheme() {
     int cols = 4;
     for (int i = 0; i < nThemes; ++i) {
         if (i % cols != 0) ImGui::SameLine();
-        const char* name = ToUtf8(m_cfg->themePresets[i].name);
-        if (name[0] == 0) { char fb[32]; snprintf(fb, 32, "预设%d", i); name = fb; }
+        const char* name = ToUtf8(ThemeDisplayName(i, m_cfg->themePresets[i].name));
         char id[32]; snprintf(id, 32, "##th%d", i);
         ImVec4 c = ToImCol(m_cfg->themePresets[i].normal);
         ImGui::PushStyleColor(ImGuiCol_Button, c); ImGui::PushStyleColor(ImGuiCol_ButtonHovered, c);
@@ -523,7 +525,7 @@ void SettingsUI::DrawPageTheme() {
     ImGui::Spacing(); ImGui::SeparatorText(S(50));
     // 与按键映射一致的布局：每个属性一行，名称 + 控件
     for (int bi = 0; bi < 3; ++bi) {
-        const char* boxNames[] = {"Total", "KPS", "BPM"};
+        const char* boxNames[] = {S(TXT_Total), "KPS", "BPM"};
         RgbaColor* boxBgs[]   = {&m_cfg->totalBoxBg, &m_cfg->kpsBoxBg, &m_cfg->bpmBoxBg};
         RgbaColor* boxFcs[]   = {&m_cfg->totalBoxFc, &m_cfg->kpsBoxFc, &m_cfg->bpmBoxFc};
         int* boxWs[]          = {&m_cfg->totalBoxW,   &m_cfg->kpsBoxW,   &m_cfg->bpmBoxW};
@@ -633,7 +635,7 @@ void SettingsUI::DrawPageRecording() {
     }
 
     ImGui::Spacing(); ImGui::SeparatorText(S(99));
-    ImGui::TextWrapped(S(148));
+    ImGui::TextWrapped("%s", S(148));
     std::string btnLabel = S(149);
     if (m_cfg->recordingHotkeyVK != 0) {
         char kb[64]; GetKeyNameText(m_cfg->recordingHotkeyVK, kb, 64);
@@ -667,7 +669,7 @@ void SettingsUI::DrawPageRecording() {
         wchar_t selPath[MAX_PATH] = {};
         BROWSEINFOW bi = {};
         bi.hwndOwner = m_hwnd;
-        bi.lpszTitle = L"选择录制文件输出目录";
+        bi.lpszTitle = LANG(TXT_RecordingFolder);
         bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
         bi.lpfn = nullptr;
         LPITEMIDLIST pidl = SHBrowseForFolderW(&bi);
@@ -706,14 +708,15 @@ static int* GetHKPtr(AppConfig* cfg, int slot) {
 void SettingsUI::DrawPageHotkeys() {
     if (!m_cfg) return;
     ImGui::SeparatorText(S(151));
-    ImGui::TextWrapped(S(185));
+    ImGui::TextWrapped("%s", S(185));
     ImGui::Spacing();
 
     for (int i = 0; i < 7; ++i) {
         int* vkPtr = GetHKPtr(m_cfg, i);
         if (!vkPtr) continue;
 
-        char keyBuf[64] = "未设置";
+        char keyBuf[64];
+        snprintf(keyBuf, sizeof(keyBuf), "%s", S(TXT_NotSet));
         if (*vkPtr != 0) GetKeyNameText(*vkPtr, keyBuf, 64);
         char label[128];
         snprintf(label, 128, "Ctrl+Shift+%s", keyBuf);

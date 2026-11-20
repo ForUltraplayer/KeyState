@@ -43,7 +43,7 @@ struct AppConfig {
     bool    showBPM        = false;   // 汇总框显示 BPM
     int     bpmNoteDiv     = 16;      // 计算基准分音 (4/8/16/32/64)
     int     bpmMergeMs     = 30;      // 同时按下合并窗口 (0=禁用, 10~100ms)
-    int     lang           = 0;       // 语言 0=CN 1=EN 2=JP
+    int     lang           = 0;       // 语言 0=CN 1=EN 2=JP 3=KO
     bool    showSummary    = false;   // 末尾汇总框
     bool    showHistory     = false;   // 按键历史轨道
     int     historyTrackH   = 600;     // 轨道高度 (px)
